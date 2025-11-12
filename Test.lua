@@ -1,3 +1,6 @@
+-- Cloud Hub - Save & TP (Fling Up + Hidden TP)
+-- No mention of effects. Buttons: SAVE / TP
+
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
@@ -7,54 +10,35 @@ local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local hrp = character:WaitForChild("HumanoidRootPart")
 
--- Saved CFrame
+-- Saved position
 local savedCFrame = nil
 
--- Secret Fling Up + TP (makes it look like a glitch/lag)
-local function flingThenTP()
-    if not savedCFrame or not character or not character:FindFirstChild("HumanoidRootPart") then return end
+-- Fling up then TP (silent, no messages about effect)
+local function flingAndTP()
+	if not savedCFrame or not character or not hrp then return end
 
-    local bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.Velocity = Vector3.new(0, 300, 0) -- Fling upward
-    bodyVelocity.MaxForce = Vector3.new(0, math.huge, 0)
-    bodyVelocity.Parent = hrp
+	local bv = Instance.new("BodyVelocity")
+	bv.Velocity = Vector3.new(0, 300, 0)
+	bv.MaxForce = Vector3.new(0, math.huge, 0)
+	bv.Parent = hrp
 
-    -- Remove fling after 0.4s, then TP
-    task.delay(0.4, function()
-        if bodyVelocity and bodyVelocity.Parent then
-            bodyVelocity:Destroy()
-        end
-        if character and character:FindFirstChild("HumanoidRootPart") then
-            character.HumanoidRootPart.CFrame = savedCFrame
-        end
-    end)
-
-    -- Optional tiny camera shake for realism (silent)
-    local cam = workspace.CurrentCamera
-    local start = tick()
-    local shakeConn
-    shakeConn = RunService.Heartbeat:Connect(function()
-        local t = tick() - start
-        if t > 0.6 then shakeConn:Disconnect() return end
-        local intensity = 8 * (1 - t / 0.6)
-        local offset = Vector3.new(
-            math.random(-intensity, intensity),
-            math.random(-intensity, intensity),
-            0
-        ) * 0.3
-        cam.CFrame = cam.CFrame * CFrame.new(offset)
-    end)
+	task.delay(0.4, function()
+		if bv and bv.Parent then bv:Destroy() end
+		if character and character:FindFirstChild("HumanoidRootPart") then
+			character.HumanoidRootPart.CFrame = savedCFrame
+		end
+	end)
 end
 
--- Save Position
+-- Save position
 local function savePos()
-    if hrp then
-        savedCFrame = hrp.CFrame
-        game.StarterGui:SetCore("ChatMakeSystemMessage", {
-            Text = "[Cloud Hub] Position saved!",
-            Color = Color3.fromRGB(100, 255, 255)
-        })
-    end
+	if hrp then
+		savedCFrame = hrp.CFrame
+		game.StarterGui:SetCore("ChatMakeSystemMessage", {
+			Text = "[Cloud Hub] Position saved!",
+			Color = Color3.fromRGB(100, 255, 255)
+		})
+	end
 end
 
 -- === GUI ===
@@ -90,7 +74,7 @@ title.Font = Enum.Font.GothamBold
 title.TextScaled = true
 title.Parent = frame
 
--- Save Button
+-- SAVE Button
 local saveBtn = Instance.new("TextButton")
 saveBtn.Size = UDim2.new(0.8, 0, 0.25, 0)
 saveBtn.Position = UDim2.new(0.1, 0, 0.4, 0)
@@ -120,41 +104,39 @@ local tpCorner = Instance.new("UICorner")
 tpCorner.CornerRadius = UDim.new(0, 6)
 tpCorner.Parent = tpBtn
 
--- Hover Effects
-local function hover(btn, enterColor, leaveColor)
-    btn.MouseEnter:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = enterColor}):Play() end)
-    btn.MouseLeave:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = leaveColor}):Play() end)
+-- Hover
+local function hover(btn, enter, leave)
+	btn.MouseEnter:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = enter}):Play() end)
+	btn.MouseLeave:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = leave}):Play() end)
 end
-
 hover(saveBtn, Color3.fromRGB(0, 200, 255), Color3.fromRGB(0, 170, 255))
 hover(tpBtn, Color3.fromRGB(150, 80, 240), Color3.fromRGB(120, 50, 200))
 
--- Connect Buttons
+-- Click
 saveBtn.MouseButton1Click:Connect(savePos)
 tpBtn.MouseButton1Click:Connect(function()
-    if savedCFrame then
-        flingThenTP()
-        game.StarterGui:SetCore("ChatMakeSystemMessage", {
-            Text = "[Cloud Hub] Teleporting...",
-            Color = Color3.fromRGB(200, 200, 255)
-        })
-    else
-        game.StarterGui:SetCore("ChatMakeSystemMessage", {
-            Text = "[Cloud Hub] Save a position first!",
-            Color = Color3.fromRGB(255, 100, 100)
-        })
-    end
+	if savedCFrame then
+		flingAndTP()
+		game.StarterGui:SetCore("ChatMakeSystemMessage", {
+			Text = "[Cloud Hub] Teleporting...",
+			Color = Color3.fromRGB(200, 200, 255)
+		})
+	else
+		game.StarterGui:SetCore("ChatMakeSystemMessage", {
+			Text = "[Cloud Hub] Save first!",
+			Color = Color3.fromRGB(255, 100, 100)
+		})
+	end
 end)
 
--- Respawn Handler
-player.CharacterAdded:Connect(function(newChar)
-    character = newChar
-    hrp = newChar:WaitForChild("HumanoidRootPart")
+-- Respawn
+player.CharacterAdded:Connect(function(c)
+	character = c
+	hrp = c:WaitForChild("HumanoidRootPart")
 end)
 
--- Startup
+-- Load message
 game.StarterGui:SetCore("ChatMakeSystemMessage", {
-    Text = "[Cloud Hub] GUI Loaded. SAVE → TP",
-    Color = Color3.fromRGB(100, 255, 255)
+	Text = "[Cloud Hub] GUI Loaded.",
+	Color = Color3.fromRGB(100, 255, 255)
 })
-]])()
