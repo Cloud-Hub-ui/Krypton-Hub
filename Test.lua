@@ -1,142 +1,211 @@
--- Cloud Hub - Save & TP (Fling Up + Hidden TP)
--- No mention of effects. Buttons: SAVE / TP
 
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
-local CoreGui = game:GetService("CoreGui")
 
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp = character:WaitForChild("HumanoidRootPart")
 
--- Saved position
-local savedCFrame = nil
 
--- Fling up then TP (silent, no messages about effect)
-local function flingAndTP()
-	if not savedCFrame or not character or not hrp then return end
+-- // services
+get_service = function(service)
+	return cloneref(game:GetService(service));
+end;
 
-	local bv = Instance.new("BodyVelocity")
-	bv.Velocity = Vector3.new(0, 300, 0)
-	bv.MaxForce = Vector3.new(0, math.huge, 0)
-	bv.Parent = hrp
+local players = get_service("Players");
+local replicated_storage = get_service("ReplicatedStorage");
+local http_service = get_service("HttpService");
+local run_service = get_service("RunService");
+local user_input_service = get_service("UserInputService");
 
-	task.delay(0.4, function()
-		if bv and bv.Parent then bv:Destroy() end
-		if character and character:FindFirstChild("HumanoidRootPart") then
-			character.HumanoidRootPart.CFrame = savedCFrame
-		end
-	end)
-end
+-- // references
+local local_player = players.LocalPlayer;
+local remote = replicated_storage.Packages.Net["RE/LaserGun_Fire"];
+local settings = require(replicated_storage.Shared.LaserGunsShared).Settings;
 
--- Save position
-local function savePos()
-	if hrp then
-		savedCFrame = hrp.CFrame
-		game.StarterGui:SetCore("ChatMakeSystemMessage", {
-			Text = "[Cloud Hub] Position saved!",
-			Color = Color3.fromRGB(100, 255, 255)
-		})
-	end
-end
+-- // gun mods
+settings.Radius.Value = 256;
+settings.MaxBounces.Value = 9999;
+settings.MaxAge.Value = 1e6;
+settings.StunDuration.Value = 60;
+settings.ImpulseForce.Value = 1e6;
+settings.Cooldown.Value = 0;
 
--- === GUI ===
-local gui = Instance.new("ScreenGui")
-gui.Name = "CloudHub"
-gui.ResetOnSpawn = false
-gui.Parent = CoreGui
+-- // states
+local lagger_enabled = false;
+local last_equipped = false;
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 180, 0, 100)
-frame.Position = UDim2.new(0.02, 0, 0.35, 0)
-frame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-frame.BorderSizePixel = 0
-frame.Active = true
-frame.Draggable = true
-frame.Parent = gui
+-- // ui
+local screen_gui = Instance.new("ScreenGui");
+screen_gui.Name = "discord.gg/autojoining | leaked ts";
+screen_gui.Parent = local_player:WaitForChild("PlayerGui");
 
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 10)
-corner.Parent = frame
+local frame = Instance.new("Frame");
+frame.Size = UDim2.new(0, 180, 0, 70);
+frame.Position = UDim2.new(0, 40, 0, 60);
+frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
+frame.BackgroundTransparency = 1;
+frame.Active = true;
+frame.Parent = screen_gui;
 
-local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(80, 200, 255)
-stroke.Thickness = 2
-stroke.Parent = frame
+local gradient = Instance.new("UIGradient");
+gradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 183, 197)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(174, 226, 255))
+});
+gradient.Rotation = 45;
+gradient.Parent = frame;
 
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 35)
-title.BackgroundTransparency = 1
-title.Text = "Cloud Hub"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Font = Enum.Font.GothamBold
-title.TextScaled = true
-title.Parent = frame
+local corner = Instance.new("UICorner");
+corner.CornerRadius = UDim.new(0, 12);
+corner.Parent = frame;
 
--- SAVE Button
-local saveBtn = Instance.new("TextButton")
-saveBtn.Size = UDim2.new(0.8, 0, 0.25, 0)
-saveBtn.Position = UDim2.new(0.1, 0, 0.4, 0)
-saveBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-saveBtn.Text = "SAVE"
-saveBtn.TextColor3 = Color3.new(1,1,1)
-saveBtn.Font = Enum.Font.GothamSemibold
-saveBtn.TextScaled = true
-saveBtn.Parent = frame
+local button = Instance.new("TextButton");
+button.Size = UDim2.new(1, -20, 0, 40);
+button.Position = UDim2.new(0, 10, 0.5, -20);
+button.Text = "Lagger: OFF";
+button.TextColor3 = Color3.fromRGB(255, 255, 255);
+button.Font = Enum.Font.FredokaOne;
+button.TextSize = 20;
+button.BackgroundColor3 = Color3.fromRGB(255, 182, 193);
+button.AutoButtonColor = false;
+button.Parent = frame;
 
-local saveCorner = Instance.new("UICorner")
-saveCorner.CornerRadius = UDim.new(0, 6)
-saveCorner.Parent = saveBtn
+local button_corner = Instance.new("UICorner");
+button_corner.CornerRadius = UDim.new(0, 10);
+button_corner.Parent = button;
 
--- TP Button
-local tpBtn = Instance.new("TextButton")
-tpBtn.Size = UDim2.new(0.8, 0, 0.25, 0)
-tpBtn.Position = UDim2.new(0.1, 0, 0.7, 0)
-tpBtn.BackgroundColor3 = Color3.fromRGB(120, 50, 200)
-tpBtn.Text = "TP"
-tpBtn.TextColor3 = Color3.new(1,1,1)
-tpBtn.Font = Enum.Font.GothamSemibold
-tpBtn.TextScaled = true
-tpBtn.Parent = frame
+local button_gradient = Instance.new("UIGradient");
+button_gradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 200, 200)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 220, 255))
+});
+button_gradient.Rotation = 90;
+button_gradient.Parent = button;
 
-local tpCorner = Instance.new("UICorner")
-tpCorner.CornerRadius = UDim.new(0, 6)
-tpCorner.Parent = tpBtn
+-- // toggle
+local supp = false;
 
--- Hover
-local function hover(btn, enter, leave)
-	btn.MouseEnter:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = enter}):Play() end)
-	btn.MouseLeave:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = leave}):Play() end)
-end
-hover(saveBtn, Color3.fromRGB(0, 200, 255), Color3.fromRGB(0, 170, 255))
-hover(tpBtn, Color3.fromRGB(150, 80, 240), Color3.fromRGB(120, 50, 200))
-
--- Click
-saveBtn.MouseButton1Click:Connect(savePos)
-tpBtn.MouseButton1Click:Connect(function()
-	if savedCFrame then
-		flingAndTP()
-		game.StarterGui:SetCore("ChatMakeSystemMessage", {
-			Text = "[Cloud Hub] Teleporting...",
-			Color = Color3.fromRGB(200, 200, 255)
-		})
+button.MouseButton1Click:Connect(function()
+	if supp then
+		supp = false;
+		return;
+	end;
+	lagger_enabled = not lagger_enabled;
+	button.Text = lagger_enabled and "Lagger: ON" or "Lagger: OFF";
+	if lagger_enabled then
+		button_gradient.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 160, 160)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 200, 200))
+		});
 	else
-		game.StarterGui:SetCore("ChatMakeSystemMessage", {
-			Text = "[Cloud Hub] Save first!",
-			Color = Color3.fromRGB(255, 100, 100)
-		})
-	end
-end)
+		button_gradient.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 200, 200)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 220, 255))
+		});
+	end;
+end);
 
--- Respawn
-player.CharacterAdded:Connect(function(c)
-	character = c
-	hrp = c:WaitForChild("HumanoidRootPart")
-end)
+-- // draggable
+local dragging = false;
+local drag_input, drag_start, start_pos;
+local drag_threshold = 6;
 
--- Load message
-game.StarterGui:SetCore("ChatMakeSystemMessage", {
-	Text = "[Cloud Hub] GUI Loaded.",
-	Color = Color3.fromRGB(100, 255, 255)
-})
+update_ = function(input)
+	local delta = input.Position - drag_start;
+	frame.Position = UDim2.new(
+		start_pos.X.Scale, start_pos.X.Offset + delta.X,
+		start_pos.Y.Scale, start_pos.Y.Offset + delta.Y
+	);
+end;
+
+attach_ = function(handle)
+	handle.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true;
+			drag_start = input.Position;
+			start_pos = frame.Position;
+			drag_input = nil;
+
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false;
+				end;
+			end);
+		end;
+	end);
+
+	handle.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+			drag_input = input;
+		end;
+	end);
+end;
+
+attach_(frame);
+attach_(button);
+
+user_input_service.InputChanged:Connect(function(input)
+	if dragging and input == drag_input then
+		if (input.Position - drag_start).Magnitude > drag_threshold then
+			supp = true;
+		end;
+		update_(input);
+	end;
+end);
+
+-- // get nearest
+get_nearest = function()
+	local nearest_player;
+	local shortest_distance = math.huge;
+
+	local local_character = local_player.Character;
+	if not local_character or not local_character.PrimaryPart then
+		return nil;
+	end;
+
+	local local_position = local_character.PrimaryPart.Position;
+
+	for _, player in players:GetPlayers() do
+		local character = player.Character;
+		if player ~= local_player and character and character.PrimaryPart then
+			local distance = (local_position - character.PrimaryPart.Position).Magnitude;
+			if distance < shortest_distance then
+				shortest_distance = distance;
+				nearest_player = player;
+			end;
+		end;
+	end;
+
+	return nearest_player;
+end;
+
+-- // main
+run_service.RenderStepped:Connect(function()
+	local character = local_player.Character;
+	if not character then
+		return;
+	end;
+
+	local tool = character:FindFirstChildOfClass("Tool");
+	local tool_equipped = tool and tool.Name == "Laser Gun";
+
+	if tool_equipped ~= last_equipped then
+		last_equipped = tool_equipped;
+	end;
+
+	if not (lagger_enabled and tool_equipped) then
+		return;
+	end;
+
+	local target_player = get_nearest();
+	if not target_player then
+		return;
+	end;
+
+	local target_char = target_player.Character;
+	if not (target_char and target_char.PrimaryPart and character.PrimaryPart) then
+		return;
+	end;
+
+	local pos1, pos2 = character.PrimaryPart.Position, target_char.PrimaryPart.Position;
+	local direction = (pos2 - pos1).Unit;
+	local id = http_service:GenerateGUID(false):lower():gsub("%-", "");
+
+	remote:FireServer(id, pos1, direction, workspace:GetServerTimeNow());
+end);
