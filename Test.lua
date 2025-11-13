@@ -1,179 +1,270 @@
--- // ui - modern redesign
-local screen_gui = Instance.new("ScreenGui")
-screen_gui.Name = "LaserLaggerUI"
-screen_gui.ResetOnSpawn = false
-screen_gui.Parent = local_player:WaitForChild("PlayerGui")
-
-local main_frame = Instance.new("Frame")
-main_frame.Size = UDim2.new(0, 220, 0, 100)
-main_frame.Position = UDim2.new(0, 50, 0, 50)
-main_frame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-main_frame.BackgroundTransparency = 0.1
-main_frame.BorderSizePixel = 0
-main_frame.Active = true
-main_frame.Draggable = true
-main_frame.Parent = screen_gui
-
--- Glassmorphism effect
-local glass = Instance.new("ImageLabel")
-glass.Size = UDim2.new(1, 0, 1, 0)
-glass.BackgroundTransparency = 1
-glass.Image = "rbxassetid://186181232" -- Subtle noise texture
-glass.ImageTransparency = 0.95
-glass.ImageColor3 = Color3.fromRGB(255, 255, 255)
-glass.Parent = main_frame
-
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 16)
-corner.Parent = main_frame
-
-local stroke = Instance.new("UIStroke")
-stroke.Thickness = 1.5
-stroke.Color = Color3.fromRGB(100, 150, 255)
-stroke.Transparency = 0.7
-stroke.Parent = main_frame
-
-local gradient = Instance.new("UIGradient")
-gradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 40, 60)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 25))
-})
-gradient.Rotation = 135
-gradient.Parent = main_frame
-
--- Title
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -20, 0, 30)
-title.Position = UDim2.new(0, 10, 0, 8)
-title.BackgroundTransparency = 1
-title.Text = "Laser Lagger"
-title.TextColor3 = Color3.fromRGB(200, 220, 255)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 16
-title.TextXAlignment = Enum.TextXAlignment.Left
-title.Parent = main_frame
-
--- Status Icon
-local status_icon = Instance.new("TextLabel")
-status_icon.Size = UDim2.new(0, 24, 0, 24)
-status_icon.Position = UDim2.new(1, -34, 0, 8)
-status_icon.BackgroundTransparency = 1
-status_icon.Text = "⏻"
-status_icon.TextColor3 = Color3.fromRGB(255, 100, 100)
-status_icon.Font = Enum.Font.GothamBold
-status_icon.TextSize = 18
-status_icon.Parent = main_frame
-
--- Toggle Button
-local toggle_button = Instance.new("TextButton")
-toggle_button.Size = UDim2.new(1, -30, 0, 40)
-toggle_button.Position = UDim2.new(0, 15, 1, -55)
-toggle_button.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-toggle_button.Text = ""
-toggle_button.AutoButtonColor = false
-toggle_button.Parent = main_frame
-
-local button_corner = Instance.new("UICorner")
-button_corner.CornerRadius = UDim.new(0, 12)
-button_corner.Parent = toggle_button
-
-local button_stroke = Instance.new("UIStroke")
-button_stroke.Thickness = 1
-button_stroke.Color = Color3.fromRGB(80, 120, 200)
-button_stroke.Parent = toggle_button
-
--- Toggle Knob
-local knob = Instance.new("Frame")
-knob.Size = UDim2.new(0, 32, 0, 32)
-knob.Position = UDim2.new(0, 4, 0.5, -16)
-knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-knob.Parent = toggle_button
-
-local knob_corner = Instance.new("UICorner")
-knob_corner.CornerRadius = UDim.new(1, 0)
-knob_corner.Parent = knob
-
-local knob_shadow = Instance.new("ImageLabel")
-knob_shadow.Size = UDim2.new(1, 6, 1, 6)
-knob_shadow.Position = UDim2.new(0, -3, 0, -3)
-knob_shadow.BackgroundTransparency = 1
-knob_shadow.Image = "rbxassetid://1316045217" -- Soft shadow
-knob_shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-knob_shadow.ImageTransparency = 0.8
-knob_shadow.ZIndex = 0
-knob_shadow.Parent = knob
-
--- Button Label
-local button_label = Instance.new("TextLabel")
-button_label.Size = UDim2.new(1, -50, 1, 0)
-button_label.Position = UDim2.new(0, 45, 0, 0)
-button_label.BackgroundTransparency = 1
-button_label.Text = "OFF"
-button_label.TextColor3 = Color3.fromRGB(180, 180, 180)
-button_label.Font = Enum.Font.GothamSemibold
-button_label.TextSize = 15
-button_label.TextXAlignment = Enum.TextXAlignment.Left
-button_label.Parent = toggle_button
-
--- Footer (optional info)
-local footer = Instance.new("TextLabel")
-footer.Size = UDim2.new(1, -20, 0, 16)
-footer.Position = UDim2.new(0, 10, 1, -22)
-footer.BackgroundTransparency = 1
-footer.Text = "Target: Nearest Player"
-footer.TextColor3 = Color3.fromRGB(120, 160, 220)
-footer.Font = Enum.Font.Gotham
-footer.TextSize = 11
-footer.TextXAlignment = Enum.TextXAlignment.Left
-footer.Parent = main_frame
-
--- // toggle logic with smooth animation
-local tween_service = game:GetService("TweenService")
-local tween_info = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-
-local function update_toggle(enabled)
-	lagger_enabled = enabled
-
-	-- Animate knob
-	local knob_goal = enabled and UDim2.new(1, -36, 0.5, -16) or UDim2.new(0, 4, 0.5, -16)
-	local knob_tween = tween_service:Create(knob, tween_info, { Position = knob_goal })
-	knob_tween:Play()
-
-	-- Background color
-	local bg_color = enabled and Color3.fromRGB(80, 180, 100) or Color3.fromRGB(60, 60, 80)
-	local bg_tween = tween_service:Create(toggle_button, tween_info, { BackgroundColor3 = bg_color })
-	bg_tween:Play()
-
-	-- Label
-	button_label.Text = enabled and "ON" or "OFF"
-	button_label.TextColor3 = enabled and Color3.fromRGB(200, 255, 200) or Color3.fromRGB(180, 180, 180)
-
-	-- Status icon
-	status_icon.Text = enabled and "✓" or "⏻"
-	status_icon.TextColor3 = enabled and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
-
-	-- Stroke glow
-	button_stroke.Color = enabled and Color3.fromRGB(100, 255, 120) or Color3.fromRGB(80, 120, 200)
+-- // services
+get_service = function(service)
+	return cloneref(game:GetService(service))
 end
 
-toggle_button.MouseButton1Click:Connect(function()
-	update_toggle(not lagger_enabled)
+local Players            = get_service("Players")
+local ReplicatedStorage  = get_service("ReplicatedStorage")
+local HttpService        = get_service("HttpService")
+local RunService         = get_service("RunService")
+local UserInputService   = get_service("UserInputService")
+local TweenService       = get_service("TweenService")
+
+-- // references
+local LocalPlayer = Players.LocalPlayer
+local Remote      = ReplicatedStorage.Packages.Net["RE/LaserGun_Fire"]
+local Settings    = require(ReplicatedStorage.Shared.LaserGunsShared).Settings
+
+-- // gun mods
+Settings.Radius.Value        = 256
+Settings.MaxBounces.Value    = 9999
+Settings.MaxAge.Value        = 1e6
+Settings.StunDuration.Value  = 60
+Settings.ImpulseForce.Value  = 1e6
+Settings.Cooldown.Value      = 0
+
+-- // states
+local lagger_enabled = false
+local last_equipped   = false
+
+----------------------------------------------------------------
+-- // NEW MODERN GUI (replace everything from the old UI block)
+----------------------------------------------------------------
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "LaserLaggerUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 220, 0, 100)
+MainFrame.Position = UDim2.new(0, 50, 0, 50)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+MainFrame.BackgroundTransparency = 0.1
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+-- Glassmorphism
+local Glass = Instance.new("ImageLabel")
+Glass.Size = UDim2.new(1, 0, 1, 0)
+Glass.BackgroundTransparency = 1
+Glass.Image = "rbxassetid://186181232"
+Glass.ImageTransparency = 0.95
+Glass.ImageColor3 = Color3.fromRGB(255, 255, 255)
+Glass.Parent = MainFrame
+
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 16)
+Corner.Parent = MainFrame
+
+local Stroke = Instance.new("UIStroke")
+Stroke.Thickness = 1.5
+Stroke.Color = Color3.fromRGB(100, 150, 255)
+Stroke.Transparency = 0.7
+Stroke.Parent = MainFrame
+
+local Gradient = Instance.new("UIGradient")
+Gradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 40, 60)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 25))
+}
+Gradient.Rotation = 135
+Gradient.Parent = MainFrame
+
+-- Title
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -20, 0, 30)
+Title.Position = UDim2.new(0, 10, 0, 8)
+Title.BackgroundTransparency = 1
+Title.Text = "Laser Lagger"
+Title.TextColor3 = Color3.fromRGB(200, 220, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 16
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = MainFrame
+
+-- Status Icon
+local StatusIcon = Instance.new("TextLabel")
+StatusIcon.Size = UDim2.new(0, 24, 0, 24)
+StatusIcon.Position = UDim2.new(1, -34, 0, 8)
+StatusIcon.BackgroundTransparency = 1
+StatusIcon.Text = "Power"
+StatusIcon.TextColor3 = Color3.fromRGB(255, 100, 100)
+StatusIcon.Font = Enum.Font.GothamBold
+StatusIcon.TextSize = 18
+StatusIcon.Parent = MainFrame
+
+-- Toggle Button
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Size = UDim2.new(1, -30, 0, 40)
+ToggleBtn.Position = UDim2.new(0, 15, 1, -55)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+ToggleBtn.Text = ""
+ToggleBtn.AutoButtonColor = false
+ToggleBtn.Parent = MainFrame
+
+local BtnCorner = Instance.new("UICorner")
+BtnCorner.CornerRadius = UDim.new(0, 12)
+BtnCorner.Parent = ToggleBtn
+
+local BtnStroke = Instance.new("UIStroke")
+BtnStroke.Thickness = 1
+BtnStroke.Color = Color3.fromRGB(80, 120, 200)
+BtnStroke.Parent = ToggleBtn
+
+-- Knob
+local Knob = Instance.new("Frame")
+Knob.Size = UDim2.new(0, 32, 0, 32)
+Knob.Position = UDim2.new(0, 4, 0.5, -16)
+Knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Knob.Parent = ToggleBtn
+
+local KnobCorner = Instance.new("UICorner")
+KnobCorner.CornerRadius = UDim.new(1, 0)
+KnobCorner.Parent = Knob
+
+local KnobShadow = Instance.new("ImageLabel")
+KnobShadow.Size = UDim2.new(1, 6, 1, 6)
+KnobShadow.Position = UDim2.new(0, -3, 0, -3)
+KnobShadow.BackgroundTransparency = 1
+KnobShadow.Image = "rbxassetid://1316045217"
+KnobShadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+KnobShadow.ImageTransparency = 0.8
+KnobShadow.ZIndex = 0
+KnobShadow.Parent = Knob
+
+-- Button Label
+local BtnLabel = Instance.new("TextLabel")
+BtnLabel.Size = UDim2.new(1, -50, 1, 0)
+BtnLabel.Position = UDim2.new(0, 45, 0, 0)
+BtnLabel.BackgroundTransparency = 1
+BtnLabel.Text = "OFF"
+BtnLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+BtnLabel.Font = Enum.Font.GothamSemibold
+BtnLabel.TextSize = 15
+BtnLabel.TextXAlignment = Enum.TextXAlignment.Left
+BtnLabel.Parent = ToggleBtn
+
+-- Target Footer
+local TargetFooter = Instance.new("TextLabel")
+TargetFooter.Size = UDim2.new(1, -20, 0, 16)
+TargetFooter.Position = UDim2.new(0, 10, 1, -22)
+TargetFooter.BackgroundTransparency = 1
+TargetFooter.Text = "Target: None"
+TargetFooter.TextColor3 = Color3.fromRGB(120, 160, 220)
+TargetFooter.Font = Enum.Font.Gotham
+TargetFooter.TextSize = 11
+TargetFooter.TextXAlignment = Enum.TextXAlignment.Left
+TargetFooter.Parent = MainFrame
+
+-- Close Button
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 24, 0, 24)
+CloseBtn.Position = UDim2.new(1, -32, 0, 8)
+CloseBtn.BackgroundTransparency = 1
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 120, 120)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 16
+CloseBtn.Parent = MainFrame
+
+CloseBtn.MouseButton1Click:Connect(function()
+	ScreenGui:Destroy()
 end)
 
--- Initialize
-update_toggle(false)
+-- // toggle animation
+local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
 
--- Optional: Close button
-local close_btn = Instance.new("TextButton")
-close_btn.Size = UDim2.new(0, 24, 0, 24)
-close_btn.Position = UDim2.new(1, -32, 0, 8)
-close_btn.BackgroundTransparency = 1
-close_btn.Text = "✕"
-close_btn.TextColor3 = Color3.fromRGB(255, 120, 120)
-close_btn.Font = Enum.Font.GothamBold
-close_btn.TextSize = 16
-close_btn.Parent = main_frame
+local function updateToggle(enabled)
+	lagger_enabled = enabled
 
-close_btn.MouseButton1Click:Connect(function()
-	screen_gui:Destroy()
+	-- knob
+	local knobGoal = enabled and UDim2.new(1, -36, 0.5, -16) or UDim2.new(0, 4, 0.5, -16)
+	TweenService:Create(Knob, tweenInfo, {Position = knobGoal}):Play()
+
+	-- button bg
+	local bgGoal = enabled and Color3.fromRGB(80, 180, 100) or Color3.fromRGB(60, 60, 80)
+	TweenService:Create(ToggleBtn, tweenInfo, {BackgroundColor3 = bgGoal}):Play()
+
+	-- label
+	BtnLabel.Text = enabled and "ON" or "OFF"
+	BtnLabel.TextColor3 = enabled and Color3.fromRGB(200, 255, 200) or Color3.fromRGB(180, 180, 180)
+
+	-- status icon
+	StatusIcon.Text = enabled and "Check" or "Power"
+	StatusIcon.TextColor3 = enabled and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
+
+	-- stroke glow
+	BtnStroke.Color = enabled and Color3.fromRGB(100, 255, 120) or Color3.fromRGB(80, 120, 200)
+end
+
+ToggleBtn.MouseButton1Click:Connect(function()
+	updateToggle(not lagger_enabled)
+end)
+
+-- initialise
+updateToggle(false)
+
+----------------------------------------------------------------
+-- // helper: nearest player
+----------------------------------------------------------------
+local function getNearest()
+	local char = LocalPlayer.Character
+	if not (char and char.PrimaryPart) then return nil end
+
+	local myPos = char.PrimaryPart.Position
+	local nearest, shortest = nil, math.huge
+
+	for _, plr in Players:GetPlayers() do
+		if plr ~= LocalPlayer then
+			local other = plr.Character
+			if other and other.PrimaryPart then
+				local dist = (myPos - other.PrimaryPart.Position).Magnitude
+				if dist < shortest then
+					shortest = dist
+					nearest = plr
+				end
+			end
+		end
+	end
+	return nearest
+end
+
+----------------------------------------------------------------
+-- // main loop
+----------------------------------------------------------------
+RunService.RenderStepped:Connect(function()
+	local char = LocalPlayer.Character
+	if not char then return end
+
+	local tool = char:FindFirstChildOfClass("Tool")
+	local equipped = tool and tool.Name == "Laser Gun"
+
+	if equipped ~= last_equipped then
+		last_equipped = equipped
+	end
+
+	if not (lagger_enabled and equipped) then
+		TargetFooter.Text = "Target: None"
+		return
+	end
+
+	local target = getNearest()
+	if not target then
+		TargetFooter.Text = "Target: None"
+		return
+	end
+
+	TargetFooter.Text = "Target: " .. target.DisplayName
+
+	local tChar = target.Character
+	if not (tChar and tChar.PrimaryPart and char.PrimaryPart) then return end
+
+	local pos1 = char.PrimaryPart.Position
+	local pos2 = tChar.PrimaryPart.Position
+	local dir  = (pos2 - pos1).Unit
+	local id   = HttpService:GenerateGUID(false):lower():gsub("%-", "")
+
+	Remote:FireServer(id, pos1, dir, workspace:GetServerTimeNow())
 end)
