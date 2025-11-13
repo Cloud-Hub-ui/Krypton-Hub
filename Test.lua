@@ -1,211 +1,179 @@
+-- // ui - modern redesign
+local screen_gui = Instance.new("ScreenGui")
+screen_gui.Name = "LaserLaggerUI"
+screen_gui.ResetOnSpawn = false
+screen_gui.Parent = local_player:WaitForChild("PlayerGui")
 
+local main_frame = Instance.new("Frame")
+main_frame.Size = UDim2.new(0, 220, 0, 100)
+main_frame.Position = UDim2.new(0, 50, 0, 50)
+main_frame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+main_frame.BackgroundTransparency = 0.1
+main_frame.BorderSizePixel = 0
+main_frame.Active = true
+main_frame.Draggable = true
+main_frame.Parent = screen_gui
 
+-- Glassmorphism effect
+local glass = Instance.new("ImageLabel")
+glass.Size = UDim2.new(1, 0, 1, 0)
+glass.BackgroundTransparency = 1
+glass.Image = "rbxassetid://186181232" -- Subtle noise texture
+glass.ImageTransparency = 0.95
+glass.ImageColor3 = Color3.fromRGB(255, 255, 255)
+glass.Parent = main_frame
 
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 16)
+corner.Parent = main_frame
 
--- // services
-get_service = function(service)
-	return cloneref(game:GetService(service));
-end;
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 1.5
+stroke.Color = Color3.fromRGB(100, 150, 255)
+stroke.Transparency = 0.7
+stroke.Parent = main_frame
 
-local players = get_service("Players");
-local replicated_storage = get_service("ReplicatedStorage");
-local http_service = get_service("HttpService");
-local run_service = get_service("RunService");
-local user_input_service = get_service("UserInputService");
-
--- // references
-local local_player = players.LocalPlayer;
-local remote = replicated_storage.Packages.Net["RE/LaserGun_Fire"];
-local settings = require(replicated_storage.Shared.LaserGunsShared).Settings;
-
--- // gun mods
-settings.Radius.Value = 256;
-settings.MaxBounces.Value = 9999;
-settings.MaxAge.Value = 1e6;
-settings.StunDuration.Value = 60;
-settings.ImpulseForce.Value = 1e6;
-settings.Cooldown.Value = 0;
-
--- // states
-local lagger_enabled = false;
-local last_equipped = false;
-
--- // ui
-local screen_gui = Instance.new("ScreenGui");
-screen_gui.Name = "discord.gg/autojoining | leaked ts";
-screen_gui.Parent = local_player:WaitForChild("PlayerGui");
-
-local frame = Instance.new("Frame");
-frame.Size = UDim2.new(0, 180, 0, 70);
-frame.Position = UDim2.new(0, 40, 0, 60);
-frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255);
-frame.BackgroundTransparency = 1;
-frame.Active = true;
-frame.Parent = screen_gui;
-
-local gradient = Instance.new("UIGradient");
+local gradient = Instance.new("UIGradient")
 gradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 183, 197)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(174, 226, 255))
-});
-gradient.Rotation = 45;
-gradient.Parent = frame;
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 40, 60)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 10, 25))
+})
+gradient.Rotation = 135
+gradient.Parent = main_frame
 
-local corner = Instance.new("UICorner");
-corner.CornerRadius = UDim.new(0, 12);
-corner.Parent = frame;
+-- Title
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -20, 0, 30)
+title.Position = UDim2.new(0, 10, 0, 8)
+title.BackgroundTransparency = 1
+title.Text = "Laser Lagger"
+title.TextColor3 = Color3.fromRGB(200, 220, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = main_frame
 
-local button = Instance.new("TextButton");
-button.Size = UDim2.new(1, -20, 0, 40);
-button.Position = UDim2.new(0, 10, 0.5, -20);
-button.Text = "Laser Lagger: OFF";
-button.TextColor3 = Color3.fromRGB(255, 255, 255);
-button.Font = Enum.Font.FredokaOne;
-button.TextSize = 15;
-button.BackgroundColor3 = Color3.fromRGB(120, 182, 193);
-button.AutoButtonColor = false;
-button.Parent = frame;
+-- Status Icon
+local status_icon = Instance.new("TextLabel")
+status_icon.Size = UDim2.new(0, 24, 0, 24)
+status_icon.Position = UDim2.new(1, -34, 0, 8)
+status_icon.BackgroundTransparency = 1
+status_icon.Text = "⏻"
+status_icon.TextColor3 = Color3.fromRGB(255, 100, 100)
+status_icon.Font = Enum.Font.GothamBold
+status_icon.TextSize = 18
+status_icon.Parent = main_frame
 
-local button_corner = Instance.new("UICorner");
-button_corner.CornerRadius = UDim.new(0, 10);
-button_corner.Parent = button;
+-- Toggle Button
+local toggle_button = Instance.new("TextButton")
+toggle_button.Size = UDim2.new(1, -30, 0, 40)
+toggle_button.Position = UDim2.new(0, 15, 1, -55)
+toggle_button.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+toggle_button.Text = ""
+toggle_button.AutoButtonColor = false
+toggle_button.Parent = main_frame
 
-local button_gradient = Instance.new("UIGradient");
-button_gradient.Color = ColorSequence.new({
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 200, 200)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 220, 255))
-});
-button_gradient.Rotation = 90;
-button_gradient.Parent = button;
+local button_corner = Instance.new("UICorner")
+button_corner.CornerRadius = UDim.new(0, 12)
+button_corner.Parent = toggle_button
 
--- // toggle
-local supp = false;
+local button_stroke = Instance.new("UIStroke")
+button_stroke.Thickness = 1
+button_stroke.Color = Color3.fromRGB(80, 120, 200)
+button_stroke.Parent = toggle_button
 
-button.MouseButton1Click:Connect(function()
-	if supp then
-		supp = false;
-		return;
-	end;
-	lagger_enabled = not lagger_enabled;
-	button.Text = lagger_enabled and "Lagger: ON" or "Lagger: OFF";
-	if lagger_enabled then
-		button_gradient.Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 160, 160)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 200, 200))
-		});
-	else
-		button_gradient.Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 200, 200)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 220, 255))
-		});
-	end;
-end);
+-- Toggle Knob
+local knob = Instance.new("Frame")
+knob.Size = UDim2.new(0, 32, 0, 32)
+knob.Position = UDim2.new(0, 4, 0.5, -16)
+knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+knob.Parent = toggle_button
 
--- // draggable
-local dragging = false;
-local drag_input, drag_start, start_pos;
-local drag_threshold = 6;
+local knob_corner = Instance.new("UICorner")
+knob_corner.CornerRadius = UDim.new(1, 0)
+knob_corner.Parent = knob
 
-update_ = function(input)
-	local delta = input.Position - drag_start;
-	frame.Position = UDim2.new(
-		start_pos.X.Scale, start_pos.X.Offset + delta.X,
-		start_pos.Y.Scale, start_pos.Y.Offset + delta.Y
-	);
-end;
+local knob_shadow = Instance.new("ImageLabel")
+knob_shadow.Size = UDim2.new(1, 6, 1, 6)
+knob_shadow.Position = UDim2.new(0, -3, 0, -3)
+knob_shadow.BackgroundTransparency = 1
+knob_shadow.Image = "rbxassetid://1316045217" -- Soft shadow
+knob_shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+knob_shadow.ImageTransparency = 0.8
+knob_shadow.ZIndex = 0
+knob_shadow.Parent = knob
 
-attach_ = function(handle)
-	handle.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = true;
-			drag_start = input.Position;
-			start_pos = frame.Position;
-			drag_input = nil;
+-- Button Label
+local button_label = Instance.new("TextLabel")
+button_label.Size = UDim2.new(1, -50, 1, 0)
+button_label.Position = UDim2.new(0, 45, 0, 0)
+button_label.BackgroundTransparency = 1
+button_label.Text = "OFF"
+button_label.TextColor3 = Color3.fromRGB(180, 180, 180)
+button_label.Font = Enum.Font.GothamSemibold
+button_label.TextSize = 15
+button_label.TextXAlignment = Enum.TextXAlignment.Left
+button_label.Parent = toggle_button
 
-			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					dragging = false;
-				end;
-			end);
-		end;
-	end);
+-- Footer (optional info)
+local footer = Instance.new("TextLabel")
+footer.Size = UDim2.new(1, -20, 0, 16)
+footer.Position = UDim2.new(0, 10, 1, -22)
+footer.BackgroundTransparency = 1
+footer.Text = "Target: Nearest Player"
+footer.TextColor3 = Color3.fromRGB(120, 160, 220)
+footer.Font = Enum.Font.Gotham
+footer.TextSize = 11
+footer.TextXAlignment = Enum.TextXAlignment.Left
+footer.Parent = main_frame
 
-	handle.InputChanged:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-			drag_input = input;
-		end;
-	end);
-end;
+-- // toggle logic with smooth animation
+local tween_service = game:GetService("TweenService")
+local tween_info = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
 
-attach_(frame);
-attach_(button);
+local function update_toggle(enabled)
+	lagger_enabled = enabled
 
-user_input_service.InputChanged:Connect(function(input)
-	if dragging and input == drag_input then
-		if (input.Position - drag_start).Magnitude > drag_threshold then
-			supp = true;
-		end;
-		update_(input);
-	end;
-end);
+	-- Animate knob
+	local knob_goal = enabled and UDim2.new(1, -36, 0.5, -16) or UDim2.new(0, 4, 0.5, -16)
+	local knob_tween = tween_service:Create(knob, tween_info, { Position = knob_goal })
+	knob_tween:Play()
 
--- // get nearest
-get_nearest = function()
-	local nearest_player;
-	local shortest_distance = math.huge;
+	-- Background color
+	local bg_color = enabled and Color3.fromRGB(80, 180, 100) or Color3.fromRGB(60, 60, 80)
+	local bg_tween = tween_service:Create(toggle_button, tween_info, { BackgroundColor3 = bg_color })
+	bg_tween:Play()
 
-	local local_character = local_player.Character;
-	if not local_character or not local_character.PrimaryPart then
-		return nil;
-	end;
+	-- Label
+	button_label.Text = enabled and "ON" or "OFF"
+	button_label.TextColor3 = enabled and Color3.fromRGB(200, 255, 200) or Color3.fromRGB(180, 180, 180)
 
-	local local_position = local_character.PrimaryPart.Position;
+	-- Status icon
+	status_icon.Text = enabled and "✓" or "⏻"
+	status_icon.TextColor3 = enabled and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 100, 100)
 
-	for _, player in players:GetPlayers() do
-		local character = player.Character;
-		if player ~= local_player and character and character.PrimaryPart then
-			local distance = (local_position - character.PrimaryPart.Position).Magnitude;
-			if distance < shortest_distance then
-				shortest_distance = distance;
-				nearest_player = player;
-			end;
-		end;
-	end;
+	-- Stroke glow
+	button_stroke.Color = enabled and Color3.fromRGB(100, 255, 120) or Color3.fromRGB(80, 120, 200)
+end
 
-	return nearest_player;
-end;
+toggle_button.MouseButton1Click:Connect(function()
+	update_toggle(not lagger_enabled)
+end)
 
--- // main
-run_service.RenderStepped:Connect(function()
-	local character = local_player.Character;
-	if not character then
-		return;
-	end;
+-- Initialize
+update_toggle(false)
 
-	local tool = character:FindFirstChildOfClass("Tool");
-	local tool_equipped = tool and tool.Name == "Laser Gun";
+-- Optional: Close button
+local close_btn = Instance.new("TextButton")
+close_btn.Size = UDim2.new(0, 24, 0, 24)
+close_btn.Position = UDim2.new(1, -32, 0, 8)
+close_btn.BackgroundTransparency = 1
+close_btn.Text = "✕"
+close_btn.TextColor3 = Color3.fromRGB(255, 120, 120)
+close_btn.Font = Enum.Font.GothamBold
+close_btn.TextSize = 16
+close_btn.Parent = main_frame
 
-	if tool_equipped ~= last_equipped then
-		last_equipped = tool_equipped;
-	end;
-
-	if not (lagger_enabled and tool_equipped) then
-		return;
-	end;
-
-	local target_player = get_nearest();
-	if not target_player then
-		return;
-	end;
-
-	local target_char = target_player.Character;
-	if not (target_char and target_char.PrimaryPart and character.PrimaryPart) then
-		return;
-	end;
-
-	local pos1, pos2 = character.PrimaryPart.Position, target_char.PrimaryPart.Position;
-	local direction = (pos2 - pos1).Unit;
-	local id = http_service:GenerateGUID(false):lower():gsub("%-", "");
-
-	remote:FireServer(id, pos1, direction, workspace:GetServerTimeNow());
-end);
+close_btn.MouseButton1Click:Connect(function()
+	screen_gui:Destroy()
+end)
