@@ -84,17 +84,6 @@ Title.TextSize = 16
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = MainFrame
 
--- Status Icon
-local StatusIcon = Instance.new("TextLabel")
-StatusIcon.Size = UDim2.new(0, 24, 0, 24)
-StatusIcon.Position = UDim2.new(1, -34, 0, 8)
-StatusIcon.BackgroundTransparency = 1
-StatusIcon.Text = "Power"
-StatusIcon.TextColor3 = Color3.fromRGB(255, 100, 100)
-StatusIcon.Font = Enum.Font.GothamBold
-StatusIcon.TextSize = 18
-StatusIcon.Parent = MainFrame
-
 -- Toggle Button
 local ToggleBtn = Instance.new("TextButton")
 ToggleBtn.Size = UDim2.new(1, -30, 0, 40)
