@@ -58,11 +58,11 @@ corner.Parent = frame;
 local button = Instance.new("TextButton");
 button.Size = UDim2.new(1, -20, 0, 40);
 button.Position = UDim2.new(0, 10, 0.5, -20);
-button.Text = "Lagger: OFF";
+button.Text = "Laser Lagger: OFF";
 button.TextColor3 = Color3.fromRGB(255, 255, 255);
 button.Font = Enum.Font.FredokaOne;
-button.TextSize = 20;
-button.BackgroundColor3 = Color3.fromRGB(255, 182, 193);
+button.TextSize = 15;
+button.BackgroundColor3 = Color3.fromRGB(120, 182, 193);
 button.AutoButtonColor = false;
 button.Parent = frame;
 
